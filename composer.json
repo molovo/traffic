@@ -1,0 +1,11 @@
+{
+  "name": "molovo/traffic",
+  "autoload": {
+    "psr-4": {
+      "Molovo\\Traffic\\": "src/"
+    }
+  },
+  "require": {
+    "PHP": ">=5.5"
+  }
+}
