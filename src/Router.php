@@ -37,7 +37,26 @@ class Router
         self::ANY,
     ];
 
+    /**
+     * The current router instance.
+     *
+     * @var Router|null
+     */
     private static $router = null;
+
+    /**
+     * The route cache.
+     *
+     * @var Route[]
+     */
+    private static $routes = [];
+
+    /**
+     * The current route.
+     *
+     * @var Route|null
+     */
+    public static $current = null;
 
     /**
      * Allow for static access to HTTP Methods.
@@ -45,7 +64,7 @@ class Router
      * @param string $method The method name
      * @param array  $args   The function arguments
      *
-     * @return mixed The passed closure is invoked
+     * @return mixed The route is compiled
      */
     public static function __callStatic($method, $args)
     {
@@ -60,9 +79,17 @@ class Router
             static::$router = new static;
         }
 
-        return static::$router->check($method, $route, $closure);
+        return static::$router->compile($method, $route, $closure);
     }
 
+    /**
+     * Allow for chained access to HTTP Methods.
+     *
+     * @param string $method The method name
+     * @param array  $args   The function arguments
+     *
+     * @return mixed The route is compiled
+     */
     public function __call($method, $args)
     {
         $method                = strtolower($method);
@@ -72,32 +99,15 @@ class Router
             throw new InvalidMethodException($method.' is not a valid method name.');
         }
 
-        return $this->check($method, $route, $closure);
+        return $this->compile($method, $route, $closure);
     }
 
-    public function check($method, $route, Closure $closure)
-    {
-        if ($method === self::ANY) {
-            return $this->any($route, $closure);
-        }
-
-        if ($this->method() === $method && is_array(($vars = $this->match($route)))) {
-            return call_user_func_array($closure, $vars);
-        }
-
-        return;
-    }
-
-    private function any($route, callable $closure)
-    {
-        if (in_array($this->method(), static::$allowed) && is_array(($vars = $this->match($route)))) {
-            return call_user_func_array($closure, $vars);
-        }
-
-        return;
-    }
-
-    public function method()
+    /**
+     * Get the current request method.
+     *
+     * @return string The request method
+     */
+    public static function requestMethod()
     {
         $method = filter_input(
             INPUT_SERVER,
@@ -108,33 +118,20 @@ class Router
         return strtolower($method);
     }
 
-    public function match($route)
+    /**
+     * Compile a route.
+     *
+     * @param string  $method   The HTTP method
+     * @param string  $route    The route string to match
+     * @param Closure $callback The callback to run should the route match
+     *
+     * @return Route The compiled route object
+     */
+    public function compile($method, $route, Closure $callback)
     {
-        // Get the current uri
-        $uri = filter_input(
-            INPUT_SERVER,
-            'REQUEST_URI',
-            FILTER_SANITIZE_FULL_SPECIAL_CHARS
-        );
-
-        // Create an empty array to store return vars in
-        $vars = [];
-
-        // Sanitize multiple slashes
-        $uri = preg_replace('/\/+/', '/', $uri);
-
-        // Remove leading and trailing slashes
-        if ($uri !== '/') {
-            $uri = strpos($uri, '/') === 0
-                 ? substr($uri, 1)
-                 : $uri;
-            $uri = strpos($uri, '/') === strlen($uri) - 1
-                 ? substr($uri, 0, -1)
-                 : $uri;
-        }
-
-        if ($uri === $route) {
-            return $vars;
+        $name  = $route;
+        if (is_array($route)) {
+            list($route, $name) = $route;
         }
 
         // Explode uri
@@ -150,59 +147,41 @@ class Router
         preg_match_all($regex, $route, $matches);
         list(, $placeholders, $strings) = $matches;
 
-        if (sizeof($uri) !== sizeof($strings)) {
-            return false;
-        }
-
-        // Loop through each of the exploded uri parts
-        foreach ($uri as $pos => $bit) {
-            if (!isset($strings[$pos]) || !isset($placeholders[$pos])) {
-                return false;
-            }
-
-            // Check if the current position is a string, and if the uri matches
-            if (isset($strings[$pos]) && $strings[$pos] !== '') {
-                if ($bit !== $strings[$pos]) {
-                    return false;
-                }
-
-                continue;
-            }
-
-            // Check if the current position is a var, and if the uri matches
-            if (isset($placeholders[$pos]) && $placeholders[$pos] !== '') {
-                if (!$this->matchVar($bit, $placeholders[$pos])) {
-                    return false;
-                }
-
-                $vars[] = $bit;
-
-                continue;
-            }
-        }
-
-        return $vars;
+        // Create and cache the Route object
+        return static::$routes[$name] = new Route($method, $name, $route, $callback, $placeholders, $strings);
     }
 
-    private function matchVar($bit, $var)
+    /**
+     * Execute all routes.
+     */
+    public static function execute()
     {
-        if (!strstr($var, ':')) {
-            return true;
+        foreach (static::$routes as $route) {
+            $route->execute();
         }
+    }
 
-        list($name, $type) = explode(':', $var, 2);
-
-        switch ($type) {
-            case 'int':
-                return ctype_digit($bit);
-            case 'string':
-                return is_string($bit);
-            case 'email':
-                return filter_var($bit, FILTER_VALIDATE_EMAIL);
-            case 'ip':
-                return filter_var($bit, FILTER_VALIDATE_IP);
+    /**
+     * Return a compiled route by name.
+     *
+     * @param string $name The route name
+     *
+     * @return Route The compiled route
+     */
+    public static function route($name)
+    {
+        if (isset(static::$routes[$name])) {
+            return static::$routes[$name];
         }
+    }
 
-        return false;
+    /**
+     * Return the current route.
+     *
+     * @return Route The current route
+     */
+    public static function current()
+    {
+        return static::$current;
     }
 }
