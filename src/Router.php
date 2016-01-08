@@ -124,12 +124,18 @@ class Router
         $uri = preg_replace('/\/+/', '/', $uri);
 
         // Remove leading and trailing slashes
-        $uri = strpos($uri, '/') === 0
-             ? substr($uri, 1)
-             : $uri;
-        $uri = strpos($uri, '/') === strlen($uri) - 1
-             ? substr($uri, 0, -1)
-             : $uri;
+        if ($uri !== '/') {
+            $uri = strpos($uri, '/') === 0
+                 ? substr($uri, 1)
+                 : $uri;
+            $uri = strpos($uri, '/') === strlen($uri) - 1
+                 ? substr($uri, 0, -1)
+                 : $uri;
+        }
+
+        if ($uri === $route) {
+            return $vars;
+        }
 
         // Explode uri
         $uri = explode('/', $uri);
