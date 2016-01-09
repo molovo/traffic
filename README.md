@@ -1,6 +1,6 @@
 # Traffic
 
-A simple router in ~200 lines of PHP.
+A simple router in ~500 lines of PHP.
 
 ```
 use Molovo\Traffic\Router;
@@ -28,4 +28,8 @@ Router::get('/news/{page:int}', function($page) {
 Router::get('/user/{email:email}', function($email) {
     echo $email; // hi@molovo.co
 });
+
+// Call execute once routes have been defined to
+// execute the callback for the matching route.
+Router::execute();
 ```
