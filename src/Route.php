@@ -125,6 +125,9 @@ class Route
             FILTER_SANITIZE_FULL_SPECIAL_CHARS
         );
 
+        // We only care about the uri path, not query strings etc.
+        $uri = parse_url($uri, PHP_URL_PATH);
+
         // Create an empty array to store return vars in
         $vars = [];
 
