@@ -134,9 +134,6 @@ class Router
             list($route, $name) = $route;
         }
 
-        // Explode uri
-        $uri = explode('/', $uri);
-
         // Regex for matching strings and placeholders separately
         $regex = '#(?:\/?'
                 .'(?:\{(['.self::VALID_URL_CHARS.']+)\}?)'
