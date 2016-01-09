@@ -109,11 +109,7 @@ class Router
      */
     public static function requestMethod()
     {
-        $method = filter_input(
-            INPUT_SERVER,
-            'REQUEST_METHOD',
-            FILTER_SANITIZE_FULL_SPECIAL_CHARS
-        );
+        $method = $_SERVER['REQUEST_METHOD'];
 
         return strtolower($method);
     }
