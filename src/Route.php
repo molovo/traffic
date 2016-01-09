@@ -119,11 +119,7 @@ class Route
     public function match()
     {
         // Get the current uri
-        $uri = filter_input(
-            INPUT_SERVER,
-            'REQUEST_URI',
-            FILTER_SANITIZE_FULL_SPECIAL_CHARS
-        );
+        $uri = $_SERVER['REQUEST_URI'];
 
         // We only care about the uri path, not query strings etc.
         $uri = parse_url($uri, PHP_URL_PATH);
@@ -268,7 +264,13 @@ class Route
         if (preg_match_all('/\{(.+)\}/i', $bit, $matches)) {
             $matches = $matches[1];
 
-            return $matches[0];
+            $placeholder = $matches[0];
+            if (strstr($placeholder, ':')) {
+                $placeholder = explode(':', $placeholder);
+                $placeholder = $placeholder[0];
+            }
+
+            return $placeholder;
         }
 
         return;
