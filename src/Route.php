@@ -3,8 +3,6 @@
 namespace Molovo\Traffic;
 
 use Closure;
-use Molovo\Traffic\Router;
-use ReflectionFunction;
 
 class Route
 {
@@ -13,28 +11,28 @@ class Route
      *
      * @var string|null
      */
-    public $method       = null;
+    public $method = null;
 
     /**
      * The name given to this route.
      *
      * @var string|null
      */
-    public $name         = null;
+    public $name = null;
 
     /**
      * The route string which this Route object matches.
      *
      * @var string|null
      */
-    public $route        = null;
+    public $route = null;
 
     /**
      * The callback applied when this route is executed.
      *
      * @var Closure|null
      */
-    public $callback     = null;
+    public $callback = null;
 
     /**
      * An array of placeholders in the route string.
@@ -48,7 +46,7 @@ class Route
      *
      * @var string[]
      */
-    public $strings      = null;
+    public $strings = null;
 
     /**
      * Create the route object.
@@ -62,12 +60,12 @@ class Route
      */
     public function __construct($method, $name, $route, Closure $callback, array $placeholders = [], array $strings = [])
     {
-        $this->method        = $method;
-        $this->name          = $name;
-        $this->route         = $route;
-        $this->callback      = $callback;
-        $this->placeholders  = $placeholders;
-        $this->strings       = $strings;
+        $this->method       = $method;
+        $this->name         = $name;
+        $this->route        = $route;
+        $this->callback     = $callback;
+        $this->placeholders = $placeholders;
+        $this->strings      = $strings;
     }
 
     /**
@@ -86,7 +84,7 @@ class Route
 
         $compiled = [];
 
-        $route    = $this->route;
+        $route = $this->route;
 
         // Strip any leading or trailing slashes
         $route = strpos($route, '/') === 0
@@ -148,12 +146,14 @@ class Route
 
         $uri = explode('/', $uri);
 
-        if (count($uri) !== count($this->strings)) {
+        if (sizeof($uri) > sizeof($this->strings)) {
             return false;
         }
 
         // Loop through each of the exploded uri parts
-        foreach ($uri as $pos => $bit) {
+        foreach ($this->strings as $pos => $string) {
+            $bit = isset($uri[$pos]) ? $uri[$pos] : '';
+
             if (!isset($this->strings[$pos]) || !isset($this->placeholders[$pos])) {
                 return false;
             }
@@ -238,15 +238,21 @@ class Route
 
         list($name, $type) = explode(':', $var, 2);
 
-        switch ($type) {
-            case 'int':
-                return ctype_digit($bit);
-            case 'string':
-                return is_string($bit);
-            case 'email':
-                return filter_var($bit, FILTER_VALIDATE_EMAIL);
-            case 'ip':
-                return filter_var($bit, FILTER_VALIDATE_IP);
+        if ($bit) {
+            switch ($type) {
+                case 'int':
+                    return ctype_digit($bit);
+                case 'string':
+                    return is_string($bit);
+                case 'email':
+                    return filter_var($bit, FILTER_VALIDATE_EMAIL);
+                case 'ip':
+                    return filter_var($bit, FILTER_VALIDATE_IP);
+            }
+        }
+
+        if (substr($name, -1) === '?') {
+            return true;
         }
 
         return false;
