@@ -146,7 +146,7 @@ class Route
 
         $uri = explode('/', $uri);
 
-        if (sizeof($uri) > sizeof($this->strings)) {
+        if (count($uri) > count($this->strings)) {
             return false;
         }
 
