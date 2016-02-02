@@ -271,6 +271,9 @@ class Route
             $matches = $matches[1];
 
             $placeholder = $matches[0];
+            if (substr($placeholder, -1) === '?') {
+                $placeholder = substr($placeholder, 0, -1);
+            }
             if (strstr($placeholder, ':')) {
                 $placeholder = explode(':', $placeholder);
                 $placeholder = $placeholder[0];
